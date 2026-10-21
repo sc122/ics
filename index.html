@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>הזמנה לאירוע</title>
+<meta name="description" content="פרטי האירוע, קישור להצטרפות והוספה ליומן">
+<meta property="og:title" content="הזמנה לאירוע">
+<meta property="og:description" content="פרטי האירוע, קישור להצטרפות והוספה ליומן">
+<meta name="theme-color" content="#16233a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#eef1f4; --paper:#ffffff; --ink:#16233a; --muted:#5b6779; --rule:#d9dee5;
+  --field:#f7f9fb; --accent:#1e6a4c; --accent-soft:#e6f1ec; --danger:#b42318;
+  --serif:"Frank Ruhl Libre","David Libre",Georgia,serif;
+  --sans:"Assistant","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --page:#11151b; --paper:#1a2029; --ink:#e8ecf2; --muted:#9aa5b5; --rule:#2c3441;
+  --field:#151a22; --accent:#4fb38a; --accent-soft:#1c2c26; --danger:#f97066;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.shell{max-width:1040px;margin:0 auto;padding:28px 16px 56px}
+.single{max-width:560px}
+
+/* ---------- ההזמנה ---------- */
+.invite{background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:28px 24px 24px;position:relative}
+.invite::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--accent);border-radius:4px 4px 0 0}
+.inv-org{font-size:.92rem;color:var(--muted);font-weight:600;margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.inv-head{display:flex;gap:20px;align-items:flex-start}
+.leaf{flex:none;width:92px;border:1px solid var(--rule);border-radius:6px;overflow:hidden;text-align:center;background:var(--paper)}
+.leaf-m{display:block;background:var(--ink);color:var(--paper);font-size:.82rem;font-weight:600;padding:4px 0}
+.leaf-d{display:block;font-family:var(--serif);font-weight:700;font-size:2.7rem;line-height:1;padding:10px 0 2px}
+.leaf-w{display:block;font-size:.8rem;color:var(--muted);padding:0 0 8px}
+.inv-t{font-family:var(--serif);font-weight:700;font-size:1.75rem;line-height:1.2;margin:2px 0 8px;overflow-wrap:anywhere}
+.inv-time{margin:0;font-size:1.05rem;font-weight:600;font-variant-numeric:tabular-nums}
+.inv-status{margin:4px 0 0;font-size:.9rem;color:var(--accent);font-weight:600}
+.inv-status:empty{display:none}
+.inv-meta{margin:24px 0 0;display:grid;grid-template-columns:auto 1fr;column-gap:18px;row-gap:10px;font-size:.97rem}
+.inv-meta dt{color:var(--muted)}
+.inv-meta dd{margin:0;overflow-wrap:anywhere}
+.inv-desc{margin:20px 0 0;padding-top:18px;border-top:1px solid var(--rule);white-space:pre-wrap;font-size:.97rem}
+.inv-desc:empty{display:none}
+.is-empty .inv-t{color:var(--muted)}
+
+/* ---------- פעולות ---------- */
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;padding:12px 18px;border-radius:8px;border:1px solid transparent;font:inherit;font-weight:700;font-size:1.02rem;cursor:pointer;text-decoration:none}
+.btn-ink{background:var(--ink);color:var(--paper)}
+.btn-ink:hover{filter:brightness(1.12)}
+.btn-wa{background:#1f8f55;color:#fff}
+.btn-wa:hover{filter:brightness(1.08)}
+.btn-line{background:transparent;border-color:var(--rule);color:var(--ink);font-weight:600}
+.btn-line:hover{background:var(--field)}
+.join{margin-top:16px}
+
+.section-h{font-family:var(--serif);font-weight:500;font-size:1.15rem;margin:32px 0 10px}
+.cal-list{background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+.cal-row{display:flex;align-items:center;gap:14px;width:100%;padding:15px 18px;background:none;border:0;border-top:1px solid var(--rule);font:inherit;color:var(--ink);text-align:start;text-decoration:none;cursor:pointer}
+.cal-row:first-child{border-top:0}
+.cal-row:hover{background:var(--field)}
+.cal-row svg{flex:none;width:22px;height:22px;color:var(--muted)}
+.cal-name{font-weight:600}
+.cal-hint{display:block;font-size:.85rem;color:var(--muted)}
+.cal-rec{display:inline-block;margin-top:5px;font-size:.78rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:99px}
+.cal-rec[hidden]{display:none}
+.copy-link{margin-top:22px;background:none;border:0;padding:6px 0;font:inherit;font-size:.92rem;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+/* ---------- טופס ---------- */
+.studio{display:grid;gap:28px}
+@media (min-width:880px){.studio{grid-template-columns:minmax(0,1fr) 420px;align-items:start}.preview-col{position:sticky;top:24px}}
+.page-h{font-family:var(--serif);font-weight:700;font-size:1.9rem;line-height:1.2;margin:0 0 6px}
+.page-sub{margin:0 0 26px;color:var(--muted);max-width:52ch}
+.form{background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:24px}
+.fset{border:0;margin:0;padding:0;min-width:0}
+.fset+.fset{margin-top:26px;padding-top:22px;border-top:1px solid var(--rule)}
+.fset legend{float:right;width:100%;font-family:var(--serif);font-weight:500;font-size:1.1rem;padding:0;margin-bottom:4px}
+.fset legend+*{clear:both}
+.field{margin-top:14px}
+.field label{display:block;font-weight:600;font-size:.93rem;margin-bottom:6px}
+.field .opt{font-weight:400;color:var(--muted)}
+input,textarea{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
+input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{min-height:96px;resize:vertical}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+.help{font-size:.85rem;color:var(--muted);margin-top:5px}
+.err{color:var(--danger);font-size:.92rem;font-weight:600;margin:14px 0 0}
+.err:empty{display:none}
+.actions{margin-top:22px}
+.preview-label{font-size:.9rem;color:var(--muted);margin:0 0 10px}
+.ready{margin-top:18px;background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:20px}
+.ready[hidden]{display:none}
+.ready h2{font-family:var(--serif);font-weight:500;font-size:1.15rem;margin:0 0 4px}
+.ready p{margin:0 0 14px;color:var(--muted);font-size:.93rem}
+.ready .btn+.btn{margin-top:10px}
+.ready .btn-pair .btn{margin-top:0}
+.btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.btn-pair .btn{font-size:.95rem;min-height:46px}
+
+.foot{margin-top:28px;text-align:center;font-size:.85rem;color:var(--muted)}
+.notice{background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:28px 24px}
+.notice h1{font-family:var(--serif);font-size:1.5rem;margin:0 0 8px}
+.notice p{margin:0;color:var(--muted)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:8px;font-size:.93rem;font-weight:600;opacity:0;transition:opacity .18s,transform .18s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<template id="tpl-invite">
+  <article class="invite">
+    <p class="inv-org" hidden></p>
+    <div class="inv-head">
+      <div class="leaf" aria-hidden="true"><span class="leaf-m"></span><span class="leaf-d"></span><span class="leaf-w"></span></div>
+      <div>
+        <h1 class="inv-t"></h1>
+        <p class="inv-time"></p>
+        <p class="inv-status"></p>
+      </div>
+    </div>
+    <dl class="inv-meta"></dl>
+    <div class="inv-desc"></div>
+  </article>
+</template>
+
+<!-- ===== יצירה ===== -->
+<main id="create" class="shell" hidden>
+  <h1 class="page-h">הזמנה לאירוע</h1>
+  <p class="page-sub">ממלאים את הפרטים ושולחים את הקישור. מי שפותח אותו רואה את ההזמנה ויכול להוסיף אותה ליומן שלו.</p>
+  <div class="studio">
+    <form class="form" id="form" novalidate>
+      <fieldset class="fset">
+        <legend>האירוע</legend>
+        <div class="field"><label for="f_t">שם האירוע</label><input id="f_t" maxlength="120" required placeholder="לדוגמה: ישיבת הנהלה חודשית"></div>
+        <div class="two">
+          <div class="field"><label for="f_s">התחלה</label><input id="f_s" type="datetime-local" required></div>
+          <div class="field"><label for="f_e">סיום</label><input id="f_e" type="datetime-local" required></div>
+        </div>
+      </fieldset>
+      <fieldset class="fset">
+        <legend>איפה</legend>
+        <div class="field"><label for="f_l">קישור לפגישה <span class="opt">(Zoom, Teams או Meet)</span></label><input id="f_l" type="url" dir="ltr" placeholder="https://"></div>
+        <div class="field"><label for="f_p">מיקום <span class="opt">(אם יש)</span></label><input id="f_p" maxlength="150" placeholder="לדוגמה: חדר הדיונים, בניין המועצה"></div>
+      </fieldset>
+      <fieldset class="fset">
+        <legend>פרטים נוספים</legend>
+        <div class="field"><label for="f_g">גוף מזמין <span class="opt">(אם יש)</span></label><input id="f_g" maxlength="80" placeholder="לדוגמה: מועצה אזורית שדות נגב"></div>
+        <div class="field"><label for="f_o">איש קשר <span class="opt">(אם יש)</span></label><input id="f_o" maxlength="60"></div>
+        <div class="field"><label for="f_d">סדר יום או הערות <span class="opt">(אם יש)</span></label><textarea id="f_d" maxlength="1200"></textarea></div>
+      </fieldset>
+      <p class="err" id="f_err" role="alert"></p>
+      <div class="actions"><button type="submit" class="btn btn-ink">יצירת קישור</button></div>
+    </form>
+
+    <div class="preview-col">
+      <p class="preview-label">כך ההזמנה תיראה למוזמנים</p>
+      <div id="preview"></div>
+      <section class="ready" id="ready" hidden aria-live="polite">
+        <h2>הקישור מוכן</h2>
+        <p>שינוי בפרטים מחייב יצירת קישור חדש.</p>
+        <a class="btn btn-wa" id="r_wa" target="_blank" rel="noopener">שליחה בווטסאפ</a>
+        <div class="btn-pair">
+          <button type="button" class="btn btn-line" id="r_copy">העתקת ההודעה</button>
+          <button type="button" class="btn btn-line" id="r_link">העתקת הקישור</button>
+        </div>
+        <div class="btn-pair">
+          <a class="btn btn-line" id="r_open" target="_blank" rel="noopener">פתיחת ההזמנה</a>
+          <button type="button" class="btn btn-line" id="r_ics">הורדת קובץ ICS</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- ===== צפייה ===== -->
+<main id="view" class="shell single" hidden>
+  <div id="v_invite"></div>
+  <a class="btn btn-ink join" id="v_join" target="_blank" rel="noopener" hidden></a>
+
+  <h2 class="section-h">הוספה ליומן</h2>
+  <div class="cal-list">
+    <a class="cal-row" id="c_google" target="_blank" rel="noopener" data-k="android">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
+      <span><span class="cal-name">Google Calendar</span><span class="cal-hint">אנדרואיד וחשבונות Gmail</span><span class="cal-rec" hidden>מתאים למכשיר הזה</span></span>
+    </a>
+    <a class="cal-row" id="c_o365" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13h3v3H8z"/></svg>
+      <span><span class="cal-name">Outlook לעבודה</span><span class="cal-hint">חשבון ארגוני, Microsoft 365</span></span>
+    </a>
+    <a class="cal-row" id="c_olive" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="2.2"/></svg>
+      <span><span class="cal-name">Outlook אישי</span><span class="cal-hint">Outlook.com ו-Hotmail</span></span>
+    </a>
+    <button type="button" class="cal-row" id="c_ics" data-k="apple">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11m0 0-4-4m4 4 4-4"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></svg>
+      <span><span class="cal-name">iPhone ויומנים אחרים</span><span class="cal-hint">קובץ ICS, נפתח ביומן של המכשיר</span><span class="cal-rec" hidden>מתאים למכשיר הזה</span></span>
+    </button>
+  </div>
+  <button type="button" class="copy-link" id="v_copy" hidden>העתקת הקישור לפגישה</button>
+  <p class="foot"><a href="./" id="v_new">יצירת הזמנה חדשה</a></p>
+</main>
+
+<main id="bad" class="shell single" hidden>
+  <div class="notice">
+    <h1>לא ניתן לפתוח את ההזמנה</h1>
+    <p>ייתכן שהקישור נחתך בזמן ההעתקה. בקשו מהשולח לשלוח אותו שוב.</p>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const TZ='Asia/Jerusalem';
+// כתובת האתר אחרי ההעלאה, למשל 'https://events.example.org/'. ריק = זיהוי אוטומטי
+const BASE_URL='';
+
+/* קידוד */
+function enc(o){const b=new TextEncoder().encode(JSON.stringify(o));let s='';for(const x of b)s+=String.fromCharCode(x);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function dec(str){str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(str),c=>c.charCodeAt(0))))}
+
+/* עזרים */
+let tt;const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800)};
+const copy=async(txt,msg)=>{try{await navigator.clipboard.writeText(txt);toast(msg)}catch(e){prompt('העתיקו:',txt)}};
+const gFmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+const pad=n=>String(n).padStart(2,'0');
+const toLocalInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const fmt=(d,o)=>d.toLocaleString('he-IL',{timeZone:TZ,...o});
+const fDate=d=>fmt(d,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const fTime=d=>fmt(d,{hour:'2-digit',minute:'2-digit'});
+const iso=s=>'\u2066'+s+'\u2069';
+const sameDay=(a,b)=>fmt(a,{year:'numeric',month:'numeric',day:'numeric'})===fmt(b,{year:'numeric',month:'numeric',day:'numeric'});
+
+function kindOf(link){
+  if(!link)return '';
+  const u=link.toLowerCase();
+  if(u.includes('zoom.'))return 'Zoom';
+  if(u.includes('teams.microsoft')||u.includes('teams.live'))return 'Microsoft Teams';
+  if(u.includes('meet.google'))return 'Google Meet';
+  if(u.includes('webex'))return 'Webex';
+  return 'פגישה מקוונת';
+}
+function fullDesc(ev){
+  const p=[];
+  if(ev.l)p.push(`הצטרפות (${kindOf(ev.l)}):\n${ev.l}`);
+  if(ev.g)p.push(`גוף מזמין: ${ev.g}`);
+  if(ev.o)p.push(`איש קשר: ${ev.o}`);
+  if(ev.d)p.push(ev.d);
+  return p.join('\n\n');
+}
+const loc=ev=>ev.p||(ev.l?`${kindOf(ev.l)}: ${ev.l}`:'');
+function timeLine(S,E){
+  if(sameDay(S,E))return iso(`${fTime(S)}–${fTime(E)}`);
+  return `${fTime(S)} עד ${fmt(E,{weekday:'long',day:'numeric',month:'long'})}, ${fTime(E)}`;
+}
+
+/* קישורי יומן */
+function googleUrl(ev,S,E){
+  return 'https://calendar.google.com/calendar/render?'+new URLSearchParams({action:'TEMPLATE',text:ev.t,dates:`${gFmt(S)}/${gFmt(E)}`,details:fullDesc(ev),location:loc(ev),ctz:TZ});
+}
+function outlookUrl(host,ev,S,E){
+  return `https://${host}/calendar/deeplink/compose?`+new URLSearchParams({path:'/calendar/action/compose',rru:'addevent',subject:ev.t,startdt:S.toISOString(),enddt:E.toISOString(),body:fullDesc(ev).replace(/\n/g,'<br>'),location:loc(ev)});
+}
+
+/* ICS */
+const icsEsc=s=>String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+function fold(line){
+  const out=[],te=new TextEncoder();let cur='',bytes=0;
+  for(const ch of line){const b=te.encode(ch).length,lim=out.length?74:75;if(bytes+b>lim){out.push(cur);cur=ch;bytes=b}else{cur+=ch;bytes+=b}}
+  out.push(cur);return out.join('\r\n ');
+}
+function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)}
+function buildIcs(ev,S,E){
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//EventInvite//HE','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
+    `UID:${ev.s}-${hash(ev.t+(ev.l||''))}@event-invite`,'DTSTAMP:'+gFmt(new Date()),'DTSTART:'+gFmt(S),'DTEND:'+gFmt(E),
+    'SUMMARY:'+icsEsc(ev.t),'DESCRIPTION:'+icsEsc(fullDesc(ev))];
+  if(loc(ev))L.push('LOCATION:'+icsEsc(loc(ev)));
+  if(ev.l)L.push('URL:'+ev.l);
+  L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(ev.t),'TRIGGER:-PT15M','END:VALARM','END:VEVENT','END:VCALENDAR');
+  return L.map(fold).join('\r\n')+'\r\n';
+}
+function dlIcs(ev,S,E){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buildIcs(ev,S,E)],{type:'text/calendar;charset=utf-8'}));
+  a.download=(ev.t.replace(/[\\/:*?"<>|]/g,'').trim().slice(0,40)||'event')+'.ics';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
+
+/* ההזמנה */
+function status(S,E){
+  const now=Date.now();
+  if(now>E)return 'האירוע הסתיים';
+  if(now>=S)return 'מתקיים עכשיו';
+  const m=Math.round((S-now)/60000);
+  if(m<60)return `מתחיל בעוד ${m} דקות`;
+  if(sameDay(new Date(),S))return 'היום';
+  if(sameDay(new Date(now+86400000),S))return 'מחר';
+  return '';
+}
+function renderInvite(host,ev,{live=false}={}){
+  let root=host.firstElementChild;
+  if(!root){host.appendChild($('tpl-invite').content.cloneNode(true));root=host.firstElementChild}
+  const q=s=>root.querySelector(s);
+  const S=ev.s?new Date(ev.s*60000):null,E=ev.e?new Date(ev.e*60000):null;
+  root.classList.toggle('is-empty',!ev.t);
+  q('.inv-t').textContent=ev.t||'שם האירוע';
+  q('.inv-org').textContent=ev.g||'';q('.inv-org').hidden=!ev.g;
+  if(S){
+    q('.leaf-m').textContent=fmt(S,{month:'long'});
+    q('.leaf-d').textContent=fmt(S,{day:'numeric'});
+    q('.leaf-w').textContent=fmt(S,{weekday:'long'});
+    q('.inv-time').textContent=E&&E>S?timeLine(S,E):fTime(S);
+    q('.inv-status').textContent=(!live&&E)?status(S,E):'';
+  }
+  const meta=q('.inv-meta');meta.textContent='';
+  const add=(k,v)=>{if(!v)return;const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=v;meta.append(dt,dd)};
+  add('תאריך',S?fDate(S):'');
+  add('הצטרפות',ev.l?kindOf(ev.l):'');
+  add('מיקום',ev.p);
+  add('איש קשר',ev.o);
+  q('.inv-desc').textContent=ev.d||'';
+}
+
+/* צפייה */
+function showView(ev){
+  const S=new Date(ev.s*60000),E=new Date(ev.e*60000);
+  document.title=ev.t;
+  renderInvite($('v_invite'),ev);
+  setInterval(()=>{$('v_invite').querySelector('.inv-status').textContent=status(S,E)},30000);
+  if(ev.l){
+    $('v_join').href=ev.l;$('v_join').textContent=`הצטרפות לפגישה ב-${kindOf(ev.l)}`;$('v_join').hidden=false;
+    $('v_copy').hidden=false;$('v_copy').onclick=()=>copy(ev.l,'הקישור לפגישה הועתק');
+  }
+  $('c_google').href=googleUrl(ev,S,E);
+  $('c_o365').href=outlookUrl('outlook.office.com',ev,S,E);
+  $('c_olive').href=outlookUrl('outlook.live.com',ev,S,E);
+  $('c_ics').onclick=()=>dlIcs(ev,S,E);
+  const ua=navigator.userAgent,k=/iPhone|iPad|iPod|Macintosh/.test(ua)?'apple':/Android/.test(ua)?'android':'';
+  if(k)document.querySelector(`[data-k="${k}"] .cal-rec`).hidden=false;
+  $('v_new').href=location.pathname;
+  $('view').hidden=false;
+}
+
+/* יצירה */
+function collect(){
+  const v=id=>$(id).value.trim();
+  const ev={t:v('f_t')};
+  const sv=$('f_s').value,evv=$('f_e').value;
+  if(sv)ev.s=Math.round(new Date(sv)/60000);
+  if(evv)ev.e=Math.round(new Date(evv)/60000);
+  for(const [k,id] of [['l','f_l'],['p','f_p'],['g','f_g'],['o','f_o'],['d','f_d']]){const x=v(id);if(x)ev[k]=x}
+  return ev;
+}
+function validate(ev){
+  if(!ev.t)return ['f_t','חסר שם לאירוע.'];
+  if(!ev.s)return ['f_s','חסרים תאריך ושעת התחלה.'];
+  if(!ev.e)return ['f_e','חסרה שעת סיום.'];
+  if(ev.e<=ev.s)return ['f_e','שעת הסיום צריכה להיות אחרי שעת ההתחלה.'];
+  if(ev.l&&!/^https?:\/\/\S+$/i.test(ev.l))return ['f_l','הקישור לפגישה צריך להתחיל ב-https://'];
+  return null;
+}
+function showCreate(){
+  const now=new Date();now.setMinutes(0,0,0);now.setHours(now.getHours()+1);
+  $('f_s').value=toLocalInput(now);$('f_e').value=toLocalInput(new Date(+now+3600000));
+  $('f_s').addEventListener('change',()=>{const S=new Date($('f_s').value),E=new Date($('f_e').value);if(!(E>S))$('f_e').value=toLocalInput(new Date(+S+3600000))});
+  const refresh=()=>{renderInvite($('preview'),collect(),{live:true});$('ready').hidden=true};
+  $('form').addEventListener('input',refresh);$('form').addEventListener('change',refresh);refresh();
+
+  $('form').addEventListener('submit',e=>{
+    e.preventDefault();
+    const ev=collect(),bad=validate(ev);
+    $('f_err').textContent='';
+    if(bad){$('f_err').textContent=bad[1];$(bad[0]).focus();return}
+    const base=BASE_URL||(/^https?:$/.test(location.protocol)?location.origin+location.pathname:'');
+    if(!base){$('f_err').textContent='הדף פתוח כקובץ ולא מכתובת אינטרנט, ולכן הקישור לא יעבוד אצל אחרים. העלו את הדף לאחסון ופתחו אותו משם.';return}
+    const url=base+'#e='+enc(ev);
+    const S=new Date(ev.s*60000),E=new Date(ev.e*60000);
+    const lines=[`*${ev.t}*`,`${fDate(S)}, ${timeLine(S,E)}`];
+    if(ev.l)lines.push(`בפגישה מקוונת ב-${kindOf(ev.l)}`);
+    if(ev.p)lines.push(ev.p);
+    lines.push('','פרטים והוספה ליומן:',url);
+    const msg=lines.join('\n');
+    $('r_wa').href='https://wa.me/?text='+encodeURIComponent(msg);
+    $('r_copy').onclick=()=>copy(msg,'ההודעה הועתקה');
+    $('r_link').onclick=()=>copy(url,'הקישור הועתק');
+    $('r_open').href=url;
+    $('r_ics').onclick=()=>dlIcs(ev,S,E);
+    $('ready').hidden=false;
+    $('ready').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'nearest'});
+  });
+  $('create').hidden=false;
+}
+
+/* ניתוב */
+const m=location.hash.match(/e=([A-Za-z0-9_-]+)/);
+if(m){try{const ev=dec(m[1]);if(!ev.t||!ev.s||!ev.e)throw 0;showView(ev)}catch(e){$('bad').hidden=false}}
+else showCreate();
+</script>
+</body>
+</html>
