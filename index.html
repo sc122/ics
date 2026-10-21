@@ -86,8 +86,8 @@ a{color:inherit}
 .field{margin-top:14px}
 .field label{display:block;font-weight:600;font-size:.93rem;margin-bottom:6px}
 .field .opt{font-weight:400;color:var(--muted)}
-input,textarea{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
-input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input,textarea,select{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 textarea{min-height:96px;resize:vertical}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 @media (max-width:420px){.two{grid-template-columns:1fr}}
@@ -146,6 +146,18 @@ textarea{min-height:96px;resize:vertical}
           <div class="field"><label for="f_s">התחלה</label><input id="f_s" type="datetime-local" required></div>
           <div class="field"><label for="f_e">סיום</label><input id="f_e" type="datetime-local" required></div>
         </div>
+      </fieldset>
+      <fieldset class="fset">
+        <legend>חזרה</legend>
+        <div class="field"><label for="f_r">האירוע חוזר</label>
+          <select id="f_r"><option value="">לא, אירוע חד־פעמי</option><option value="D">כל יום</option><option value="W">כל שבוע</option><option value="W2">כל שבועיים</option><option value="M">כל חודש</option></select></div>
+        <div class="two" id="r_end" hidden>
+          <div class="field"><label for="f_re">עד מתי</label>
+            <select id="f_re"><option value="">ללא תאריך סיום</option><option value="c">מספר פעמים</option><option value="u">עד תאריך</option></select></div>
+          <div class="field" id="r_c_f" hidden><label for="f_rc">כמה פעמים</label><input id="f_rc" type="number" min="2" max="365" inputmode="numeric" value="10"></div>
+          <div class="field" id="r_u_f" hidden><label for="f_ru">תאריך אחרון</label><input id="f_ru" type="date"></div>
+        </div>
+        <p class="help" id="r_help" hidden>ביומן Outlook דרך הדפדפן אי אפשר לשמור אירוע חוזר, ולכן משתמשי Outlook יקבלו קובץ ICS.</p>
       </fieldset>
       <fieldset class="fset">
         <legend>איפה</legend>
@@ -259,6 +271,22 @@ function fullDesc(ev){
   return p.join('\n\n');
 }
 const loc=ev=>ev.p||(ev.l?`${kindOf(ev.l)}: ${ev.l}`:'');
+function rrule(ev){
+  const r=ev.r;if(!r)return '';
+  let x={D:'FREQ=DAILY',W:'FREQ=WEEKLY',W2:'FREQ=WEEKLY;INTERVAL=2',M:'FREQ=MONTHLY'}[r.f];
+  if(!x)return '';
+  if(r.c)x+=';COUNT='+r.c;
+  else if(r.u)x+=';UNTIL='+gFmt(new Date(r.u+'T23:59:00'));
+  return x;
+}
+function recText(ev,S){
+  const r=ev.r;if(!r)return '';
+  const wd=fmt(S,{weekday:'long'});
+  let t={D:'כל יום',W:`כל שבוע, ב${wd}`,W2:`כל שבועיים, ב${wd}`,M:`כל חודש, ב-${fmt(S,{day:'numeric'})} לחודש`}[r.f]||'';
+  if(r.c)t+=`, ${r.c} פעמים`;
+  else if(r.u)t+=`, עד ${new Date(r.u+'T12:00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'})}`;
+  return t;
+}
 function timeLine(S,E){
   if(sameDay(S,E))return iso(`${fTime(S)}–${fTime(E)}`);
   return `${fTime(S)} עד ${fmt(E,{weekday:'long',day:'numeric',month:'long'})}, ${fTime(E)}`;
@@ -266,7 +294,9 @@ function timeLine(S,E){
 
 /* קישורי יומן */
 function googleUrl(ev,S,E){
-  return 'https://calendar.google.com/calendar/render?'+new URLSearchParams({action:'TEMPLATE',text:ev.t,dates:`${gFmt(S)}/${gFmt(E)}`,details:fullDesc(ev),location:loc(ev),ctz:TZ});
+  const p=new URLSearchParams({action:'TEMPLATE',text:ev.t,dates:`${gFmt(S)}/${gFmt(E)}`,details:fullDesc(ev),location:loc(ev),ctz:TZ});
+  const rr=rrule(ev);
+  return 'https://calendar.google.com/calendar/render?'+p+(rr?'&recur='+encodeURIComponent('RRULE:'+rr):'');
 }
 function outlookUrl(host,ev,S,E){
   return `https://${host}/calendar/deeplink/compose?`+new URLSearchParams({path:'/calendar/action/compose',rru:'addevent',subject:ev.t,startdt:S.toISOString(),enddt:E.toISOString(),body:fullDesc(ev).replace(/\n/g,'<br>'),location:loc(ev)});
@@ -282,7 +312,7 @@ function fold(line){
 function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)}
 function buildIcs(ev,S,E){
   const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//EventInvite//HE','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
-    `UID:${ev.s}-${hash(ev.t+(ev.l||''))}@event-invite`,'DTSTAMP:'+gFmt(new Date()),'DTSTART:'+gFmt(S),'DTEND:'+gFmt(E),
+    `UID:${ev.s}-${hash(ev.t+(ev.l||''))}@event-invite`,'DTSTAMP:'+gFmt(new Date()),'DTSTART:'+gFmt(S),'DTEND:'+gFmt(E),...(rrule(ev)?['RRULE:'+rrule(ev)]:[]),
     'SUMMARY:'+icsEsc(ev.t),'DESCRIPTION:'+icsEsc(fullDesc(ev))];
   if(loc(ev))L.push('LOCATION:'+icsEsc(loc(ev)));
   if(ev.l)L.push('URL:'+ev.l);
@@ -297,9 +327,9 @@ function dlIcs(ev,S,E){
 }
 
 /* ההזמנה */
-function status(S,E){
+function status(S,E,rec){
   const now=Date.now();
-  if(now>E)return 'האירוע הסתיים';
+  if(now>E)return rec?'':'האירוע הסתיים';
   if(now>=S)return 'מתקיים עכשיו';
   const m=Math.round((S-now)/60000);
   if(m<60)return `מתחיל בעוד ${m} דקות`;
@@ -320,11 +350,12 @@ function renderInvite(host,ev,{live=false}={}){
     q('.leaf-d').textContent=fmt(S,{day:'numeric'});
     q('.leaf-w').textContent=fmt(S,{weekday:'long'});
     q('.inv-time').textContent=E&&E>S?timeLine(S,E):fTime(S);
-    q('.inv-status').textContent=(!live&&E)?status(S,E):'';
+    q('.inv-status').textContent=(!live&&E)?status(S,E,!!ev.r):'';
   }
   const meta=q('.inv-meta');meta.textContent='';
   const add=(k,v)=>{if(!v)return;const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=v;meta.append(dt,dd)};
-  add('תאריך',S?fDate(S):'');
+  add(ev.r?'מפגש ראשון':'תאריך',S?fDate(S):'');
+  add('חוזר',S?recText(ev,S):'');
   add('הצטרפות',ev.l?kindOf(ev.l):'');
   add('מיקום',ev.p);
   add('איש קשר',ev.o);
@@ -336,7 +367,7 @@ function showView(ev){
   const S=new Date(ev.s*60000),E=new Date(ev.e*60000);
   document.title=ev.t;
   renderInvite($('v_invite'),ev);
-  setInterval(()=>{$('v_invite').querySelector('.inv-status').textContent=status(S,E)},30000);
+  setInterval(()=>{$('v_invite').querySelector('.inv-status').textContent=status(S,E,!!ev.r)},30000);
   if(ev.l){
     $('v_join').href=ev.l;$('v_join').textContent=`הצטרפות לפגישה ב-${kindOf(ev.l)}`;$('v_join').hidden=false;
     $('v_copy').hidden=false;$('v_copy').onclick=()=>copy(ev.l,'הקישור לפגישה הועתק');
@@ -345,6 +376,7 @@ function showView(ev){
   $('c_o365').href=outlookUrl('outlook.office.com',ev,S,E);
   $('c_olive').href=outlookUrl('outlook.live.com',ev,S,E);
   $('c_ics').onclick=()=>dlIcs(ev,S,E);
+  if(ev.r){$('c_o365').hidden=true;$('c_olive').hidden=true;$('c_ics').querySelector('.cal-name').textContent='iPhone, Outlook ויומנים אחרים';$('c_ics').querySelector('.cal-hint').textContent='קובץ ICS עם כל המפגשים בסדרה'}
   const ua=navigator.userAgent,k=/iPhone|iPad|iPod|Macintosh/.test(ua)?'apple':/Android/.test(ua)?'android':'';
   if(k)document.querySelector(`[data-k="${k}"] .cal-rec`).hidden=false;
   $('v_new').href=location.pathname;
@@ -359,6 +391,10 @@ function collect(){
   if(sv)ev.s=Math.round(new Date(sv)/60000);
   if(evv)ev.e=Math.round(new Date(evv)/60000);
   for(const [k,id] of [['l','f_l'],['p','f_p'],['g','f_g'],['o','f_o'],['d','f_d']]){const x=v(id);if(x)ev[k]=x}
+  const f=$('f_r').value;
+  if(f){ev.r={f};const re=$('f_re').value;
+    if(re==='c')ev.r.c=parseInt($('f_rc').value,10)||0;
+    else if(re==='u')ev.r.u=$('f_ru').value||'-';}
   return ev;
 }
 function validate(ev){
@@ -366,6 +402,8 @@ function validate(ev){
   if(!ev.s)return ['f_s','חסרים תאריך ושעת התחלה.'];
   if(!ev.e)return ['f_e','חסרה שעת סיום.'];
   if(ev.e<=ev.s)return ['f_e','שעת הסיום צריכה להיות אחרי שעת ההתחלה.'];
+  if(ev.r&&'c' in ev.r&&!(ev.r.c>=2&&ev.r.c<=365))return ['f_rc','מספר הפעמים צריך להיות בין 2 ל-365.'];
+  if(ev.r&&ev.r.u&&(ev.r.u==='-'||new Date(ev.r.u+'T23:59:00')<new Date(ev.s*60000)))return ['f_ru','בחרו תאריך אחרון שאחרי המפגש הראשון.'];
   if(ev.l&&!/^https?:\/\/\S+$/i.test(ev.l))return ['f_l','הקישור לפגישה צריך להתחיל ב-https://'];
   return null;
 }
@@ -373,7 +411,11 @@ function showCreate(){
   const now=new Date();now.setMinutes(0,0,0);now.setHours(now.getHours()+1);
   $('f_s').value=toLocalInput(now);$('f_e').value=toLocalInput(new Date(+now+3600000));
   $('f_s').addEventListener('change',()=>{const S=new Date($('f_s').value),E=new Date($('f_e').value);if(!(E>S))$('f_e').value=toLocalInput(new Date(+S+3600000))});
-  const refresh=()=>{renderInvite($('preview'),collect(),{live:true});$('ready').hidden=true};
+  const refresh=()=>{
+    const on=!!$('f_r').value,re=$('f_re').value;
+    $('r_end').hidden=!on;$('r_help').hidden=!on;$('r_c_f').hidden=!(on&&re==='c');$('r_u_f').hidden=!(on&&re==='u');
+    const ev=collect();if(ev.r&&ev.r.u==='-')delete ev.r.u;
+    renderInvite($('preview'),ev,{live:true});$('ready').hidden=true};
   $('form').addEventListener('input',refresh);$('form').addEventListener('change',refresh);refresh();
 
   $('form').addEventListener('submit',e=>{
@@ -386,6 +428,7 @@ function showCreate(){
     const url=base+'#e='+enc(ev);
     const S=new Date(ev.s*60000),E=new Date(ev.e*60000);
     const lines=[`*${ev.t}*`,`${fDate(S)}, ${timeLine(S,E)}`];
+    if(ev.r)lines.push(recText(ev,S));
     if(ev.l)lines.push(`בפגישה מקוונת ב-${kindOf(ev.l)}`);
     if(ev.p)lines.push(ev.p);
     lines.push('','פרטים והוספה ליומן:',url);
